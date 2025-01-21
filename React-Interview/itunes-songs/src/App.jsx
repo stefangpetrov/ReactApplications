@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import './App.css'
-
-const INITIAL_LIST = ['A', 'B', 'C', 'D', 'E'];
+import SearchInput from './components/SearchInput';
+import SongGrid from './components/SongGrid';
+import INITIAL_LIST from './utils/constants';
+import fetchSongs from './services/api'
 
 function App() {
   const [displayedSongs, setDisplayedSongs] = useState(INITIAL_LIST);
@@ -9,20 +11,8 @@ function App() {
   const [areNewSongsFetched, setAreNewSongsFetched] = useState(false);
 
   const handleInputChanged = async (event) => {
-    const url = `/search?term=${encodeURIComponent(event.target.value)}`;
-    try {
-    const response = await fetch(url);
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch songs: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-
-    const filteredSongNames = (data.results)
-      .map((item) => item.trackName)
-      .sort()
-      .slice(0, 5);
+    
+    const filteredSongNames = await fetchSongs(event.target.value);
 
     if (filteredSongNames.length === 0) {
       setFetchedSongs(INITIAL_LIST);
@@ -31,10 +21,6 @@ function App() {
     }
 
     setAreNewSongsFetched(true);
-  } catch (error) {
-    console.error("Error fetching songs:", error.message);
-    return [];
-  }
   };
 
   const mixSongs = (prevDisplayedSongs) => {
@@ -54,10 +40,9 @@ function App() {
 
     const firstSong = newDisplayedSongs.shift();
     newDisplayedSongs.push(firstSong);
-    return newDisplayedSongs;
-        
-  }
-  
+    return newDisplayedSongs;       
+  };
+
   useEffect(() => {
     const interval = setInterval(() => {   
       setDisplayedSongs((prevDisplayedSongs) => mixSongs(prevDisplayedSongs));
@@ -68,12 +53,8 @@ function App() {
   
   return (
     <div className="App">
-      <input onChange={handleInputChanged} type="text" placeholder="Search band" />
-      <div className="grid">
-        {displayedSongs.map((item, index) => (
-          <div key={`${item}-${index}`} className="grid-item"><p>{item}</p></div>
-        ))}
-      </div>
+      <SearchInput onChange={handleInputChanged}/>
+      <SongGrid songs={displayedSongs} />
     </div>
   )
 }
